@@ -142,12 +142,21 @@ async fn post_one(
     let Some(collection) = data.database.get_mut(&route) else {
         return HttpResponse::NotFound().body(format!("collection {route} not found"));
     };
-    let id = Uuid::new_v4();
-    let mut body = body;
-
-    body.0[key] = json!(&id.to_string());
-    let res = body.0.clone();
-    collection.collection.insert(id.to_string(), body.0);
+    let mut body = body.0;
+    let id: Option<String> = match &body[&key] {
+        Value::Null => {
+            let _id = Uuid::new_v4().to_string();
+            body[key] = json!(&_id);
+            Some(_id)
+        }
+        Value::String(current_id) => Some(current_id.to_owned()),
+        _ => None,
+    };
+    let Some(id) = id else {
+        return HttpResponse::NotFound().body(format!("collection {route} not found"));
+    };
+    let res = body.clone();
+    collection.collection.insert(id, body);
 
     HttpResponse::Ok().json(res)
 }

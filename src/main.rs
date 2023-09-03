@@ -27,12 +27,12 @@ struct Args {
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     let args = Args::parse();
-    let mut data = parser::Source::from(&args.source);
+    let mut data = parser::Source::from(args.source.as_str());
     if let Err(e) = data.process() {
         eprintln!("Error: {e}");
         std::process::exit(1)
     }
-    let Ok(index) = indexer::Index::from(args.id.as_str(), &data.source) else {
+    let Ok(index) = indexer::Index::new(args.id.as_str(), &data.source) else {
         eprintln!("Error: invalid file format");
         std::process::exit(1)
     };

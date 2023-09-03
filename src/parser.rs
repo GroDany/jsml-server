@@ -7,14 +7,16 @@ pub struct Source {
     pub source: Value,
 }
 
-impl Source {
-    pub fn from(path: &str) -> Self {
+impl From<&str> for Source {
+    fn from(path: &str) -> Self {
         Self {
             path: String::from(path),
             source: json!(null),
         }
     }
+}
 
+impl Source {
     pub fn process(&mut self) -> std::io::Result<()> {
         let mut file = File::open(&self.path)?;
         let mut content = String::new();
