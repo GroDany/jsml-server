@@ -1,4 +1,4 @@
-use actix_web::{get, patch, post, put, web, HttpResponse, Responder};
+use actix_web::{delete, get, patch, post, put, web, HttpResponse, Responder};
 use serde_json::{json, Value};
 use std::sync::Mutex;
 use uuid::Uuid;
@@ -13,7 +13,7 @@ async fn hello() -> impl Responder {
 #[get("/{route}")]
 async fn get_all(
     path: web::Path<String>,
-    data: web::Data<Mutex<indexer::Index>>,
+    data: web::Data<Mutex<indexer::Database>>,
 ) -> impl Responder {
     let route = path.into_inner();
     let data = data.lock().unwrap();
@@ -33,7 +33,7 @@ async fn get_all(
 #[get("/{route}/{id}")]
 async fn get_one(
     path: web::Path<(String, String)>,
-    data: web::Data<Mutex<indexer::Index>>,
+    data: web::Data<Mutex<indexer::Database>>,
 ) -> impl Responder {
     let (route, id) = path.into_inner();
     let data = data.lock().unwrap();
@@ -60,7 +60,7 @@ async fn get_one(
 #[put("/{route}/{id}")]
 async fn put_one(
     path: web::Path<(String, String)>,
-    data: web::Data<Mutex<indexer::Index>>,
+    data: web::Data<Mutex<indexer::Database>>,
     body: web::Json<Value>,
 ) -> impl Responder {
     let (route, id) = path.into_inner();
@@ -97,7 +97,7 @@ async fn put_one(
 #[patch("/{route}/{id}")]
 async fn patch_one(
     path: web::Path<(String, String)>,
-    data: web::Data<Mutex<indexer::Index>>,
+    data: web::Data<Mutex<indexer::Database>>,
     body: web::Json<Value>,
 ) -> impl Responder {
     let (route, id) = path.into_inner();
@@ -133,7 +133,7 @@ async fn patch_one(
 #[post("/{route}")]
 async fn post_one(
     path: web::Path<String>,
-    data: web::Data<Mutex<indexer::Index>>,
+    data: web::Data<Mutex<indexer::Database>>,
     body: web::Json<Value>,
 ) -> impl Responder {
     let route = path.into_inner();
@@ -159,4 +159,22 @@ async fn post_one(
     collection.collection.insert(id, body);
 
     HttpResponse::Ok().json(res)
+}
+
+#[delete("/{route}/{id}")]
+async fn delete(
+    path: web::Path<(String, String)>,
+    data: web::Data<Mutex<indexer::Database>>,
+) -> impl Responder {
+    let (route, id) = path.into_inner();
+    let mut data = data.lock().unwrap();
+    let Some(collection) = data.database.get_mut(&route) else {
+        return HttpResponse::NotFound().body(format!("collection {route} not found"));
+    };
+    let result = collection.collection.remove(&id);
+    if result == None {
+        return HttpResponse::NotFound().body(format!("item {route}/{id} not found"));
+    }
+
+    HttpResponse::Ok().into()
 }

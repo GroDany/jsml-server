@@ -2,18 +2,18 @@ use serde_json::{json, Value};
 use std::collections::HashMap;
 
 #[derive(Debug)]
-pub struct IndexError {
+pub struct DatabaseError {
     pub details: String,
 }
 
 #[derive(Debug)]
-pub struct Index {
+pub struct Database {
     pub id_key: String,
     pub database: HashMap<String, Collection>,
 }
 
-impl Index {
-    pub fn new(id_key: &str, data: &Value) -> Result<Self, IndexError> {
+impl Database {
+    pub fn new(id_key: &str, data: &Value) -> Result<Self, DatabaseError> {
         let mut database = HashMap::new();
         let Some(data) = data.as_object() else {
             eprintln!("Error: invalid file format");
@@ -49,11 +49,11 @@ pub struct Collection {
 }
 
 impl Collection {
-    pub fn new(id: &str, data: &Vec<Value>) -> Result<Self, IndexError> {
+    pub fn new(id: &str, data: &Vec<Value>) -> Result<Self, DatabaseError> {
         let mut collection = HashMap::new();
         for item in data.iter() {
             let Value::String(key) = &item[id] else {
-                return Err(IndexError { details: format!("No field named: '{}'", id) });
+                return Err(DatabaseError { details: format!("No field named: '{}'", id) });
             };
             collection.insert(String::from(key), item.clone());
         }
