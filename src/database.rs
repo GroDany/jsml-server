@@ -1,9 +1,23 @@
 use serde_json::{json, Value};
-use std::collections::HashMap;
+use std::{collections::HashMap, fmt};
 
 #[derive(Debug)]
 pub struct DatabaseError {
     pub details: String,
+}
+
+impl From<&str> for DatabaseError {
+    fn from(err: &str) -> Self {
+        Self {
+            details: String::from(err),
+        }
+    }
+}
+
+impl fmt::Display for DatabaseError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.details)
+    }
 }
 
 #[derive(Debug)]
@@ -16,14 +30,12 @@ impl Database {
     pub fn new(id_key: &str, data: &Value) -> Result<Self, DatabaseError> {
         let mut database = HashMap::new();
         let Some(data) = data.as_object() else {
-            eprintln!("Error: invalid file format");
-            std::process::exit(1)
+            return Err(DatabaseError::from("Error: invalid file content"));
         };
 
         for (key, value) in data {
             let Some(collection) = value.as_array() else {
-                eprintln!("Error: invalid file format");
-                std::process::exit(1)
+                return Err(DatabaseError::from("Error: invalid file content"));
             };
             let col = Collection::new(id_key, collection);
             match col {
@@ -53,7 +65,7 @@ impl Collection {
         let mut collection = HashMap::new();
         for item in data.iter() {
             let Value::String(key) = &item[id] else {
-                return Err(DatabaseError { details: format!("No field named: '{}'", id) });
+                return Err(DatabaseError::from(format!("No field named: '{}'", id).as_str()));
             };
             collection.insert(String::from(key), item.clone());
         }

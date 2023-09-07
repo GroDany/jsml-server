@@ -4,9 +4,10 @@ use actix_cors::Cors;
 use actix_web::{web, App, HttpServer};
 use clap::Parser;
 
-mod indexer;
-mod parser;
+mod database;
 mod routes;
+mod source;
+mod state;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -27,13 +28,13 @@ struct Args {
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     let args = Args::parse();
-    let mut data = parser::Source::from(args.source.as_str());
+    let mut data = source::Source::from(args.source.as_str());
     if let Err(e) = data.process() {
         eprintln!("Error: {e}");
         std::process::exit(1)
     }
-    let Ok(database) = indexer::Database::new(args.id.as_str(), &data.source) else {
-        eprintln!("Error: invalid file format");
+    let Ok(database) = database::Database::new(args.id.as_str(), &data.source) else {
+        eprintln!("Error: invalid file content");
         std::process::exit(1)
     };
 

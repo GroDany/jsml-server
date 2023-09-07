@@ -3,7 +3,7 @@ use serde_json::{json, Value};
 use std::sync::Mutex;
 use uuid::Uuid;
 
-use crate::indexer;
+use crate::database;
 
 #[get("/")]
 async fn hello() -> impl Responder {
@@ -13,7 +13,7 @@ async fn hello() -> impl Responder {
 #[get("/{route}")]
 async fn get_all(
     path: web::Path<String>,
-    data: web::Data<Mutex<indexer::Database>>,
+    data: web::Data<Mutex<database::Database>>,
 ) -> impl Responder {
     let route = path.into_inner();
     let data = data.lock().unwrap();
@@ -33,7 +33,7 @@ async fn get_all(
 #[get("/{route}/{id}")]
 async fn get_one(
     path: web::Path<(String, String)>,
-    data: web::Data<Mutex<indexer::Database>>,
+    data: web::Data<Mutex<database::Database>>,
 ) -> impl Responder {
     let (route, id) = path.into_inner();
     let data = data.lock().unwrap();
@@ -60,7 +60,7 @@ async fn get_one(
 #[put("/{route}/{id}")]
 async fn put_one(
     path: web::Path<(String, String)>,
-    data: web::Data<Mutex<indexer::Database>>,
+    data: web::Data<Mutex<database::Database>>,
     body: web::Json<Value>,
 ) -> impl Responder {
     let (route, id) = path.into_inner();
@@ -97,7 +97,7 @@ async fn put_one(
 #[patch("/{route}/{id}")]
 async fn patch_one(
     path: web::Path<(String, String)>,
-    data: web::Data<Mutex<indexer::Database>>,
+    data: web::Data<Mutex<database::Database>>,
     body: web::Json<Value>,
 ) -> impl Responder {
     let (route, id) = path.into_inner();
@@ -133,7 +133,7 @@ async fn patch_one(
 #[post("/{route}")]
 async fn post_one(
     path: web::Path<String>,
-    data: web::Data<Mutex<indexer::Database>>,
+    data: web::Data<Mutex<database::Database>>,
     body: web::Json<Value>,
 ) -> impl Responder {
     let route = path.into_inner();
@@ -164,7 +164,7 @@ async fn post_one(
 #[delete("/{route}/{id}")]
 async fn delete(
     path: web::Path<(String, String)>,
-    data: web::Data<Mutex<indexer::Database>>,
+    data: web::Data<Mutex<database::Database>>,
 ) -> impl Responder {
     let (route, id) = path.into_inner();
     let mut data = data.lock().unwrap();
