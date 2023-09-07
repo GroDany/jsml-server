@@ -1,22 +1,42 @@
 use serde_json::{json, Value};
-use std::{collections::HashMap, fmt};
+use std::{collections::HashMap, error, fmt};
 
 #[derive(Debug)]
 pub struct DatabaseError {
     pub details: String,
 }
 
-impl From<&str> for DatabaseError {
-    fn from(err: &str) -> Self {
+impl DatabaseError {
+    pub fn new(msg: &str) -> Self {
         Self {
-            details: String::from(err),
+            details: msg.to_string(),
         }
     }
 }
 
+impl error::Error for DatabaseError {
+    fn description(&self) -> &str {
+        &self.details
+    }
+}
+
+// impl<T: error::Error + Send + Sync + 'static> From<T> for DatabaseError {
+//     fn from(e: T) -> Self {
+//         Self {
+//             details: e.to_string(),
+//         }
+//     }
+// }
+
 impl fmt::Display for DatabaseError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.details)
+    }
+}
+
+impl From<DatabaseError> for std::io::Error {
+    fn from(err: DatabaseError) -> Self {
+        std::io::Error::new(std::io::ErrorKind::Other, err.details.as_str())
     }
 }
 
@@ -30,12 +50,12 @@ impl Database {
     pub fn new(id_key: &str, data: &Value) -> Result<Self, DatabaseError> {
         let mut database = HashMap::new();
         let Some(data) = data.as_object() else {
-            return Err(DatabaseError::from("Error: invalid file content"));
+            return Err(DatabaseError::new("Error: invalid file content"));
         };
 
         for (key, value) in data {
             let Some(collection) = value.as_array() else {
-                return Err(DatabaseError::from("Error: invalid file content"));
+                return Err(DatabaseError::new("Error: invalid file content"));
             };
             let col = Collection::new(id_key, collection);
             match col {
@@ -65,7 +85,9 @@ impl Collection {
         let mut collection = HashMap::new();
         for item in data.iter() {
             let Value::String(key) = &item[id] else {
-                return Err(DatabaseError::from(format!("No field named: '{}'", id).as_str()));
+                return Err(DatabaseError::new(
+                    format!("No field named: '{}'", id).as_str(),
+                ));
             };
             collection.insert(String::from(key), item.clone());
         }

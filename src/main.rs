@@ -28,6 +28,7 @@ struct Args {
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     let args = Args::parse();
+    let state = state::State::new(args.source.as_str(), args.id.as_str())?;
     let mut data = source::Source::from(args.source.as_str());
     if let Err(e) = data.process() {
         eprintln!("Error: {e}");

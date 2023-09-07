@@ -1,5 +1,5 @@
 use crate::database::Database;
-use crate::database::{self, DatabaseError};
+use crate::database::DatabaseError;
 use crate::source;
 
 pub struct State {
@@ -9,6 +9,6 @@ pub struct State {
 
 impl State {
     pub fn new(path: &str, id_key: &str) -> Result<Self, DatabaseError> {
-        Err(DatabaseError::from("test"))
+        Err(DatabaseError::new("test"))
     }
 }
