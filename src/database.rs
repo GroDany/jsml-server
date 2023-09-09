@@ -1,107 +1,145 @@
+use itertools::Itertools;
 use serde_json::{json, Value};
-use std::{collections::HashMap, error, fmt};
+use std::collections::HashMap;
+use uuid::Uuid;
 
-#[derive(Debug)]
-pub struct DatabaseError {
-    pub details: String,
-}
-
-impl DatabaseError {
-    pub fn new(msg: &str) -> Self {
-        Self {
-            details: msg.to_string(),
-        }
-    }
-}
-
-impl error::Error for DatabaseError {
-    fn description(&self) -> &str {
-        &self.details
-    }
-}
-
-// impl<T: error::Error + Send + Sync + 'static> From<T> for DatabaseError {
-//     fn from(e: T) -> Self {
-//         Self {
-//             details: e.to_string(),
-//         }
-//     }
-// }
-
-impl fmt::Display for DatabaseError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.details)
-    }
-}
-
-impl From<DatabaseError> for std::io::Error {
-    fn from(err: DatabaseError) -> Self {
-        std::io::Error::new(std::io::ErrorKind::Other, err.details.as_str())
-    }
-}
+use crate::jsml_error::JsmlError;
 
 #[derive(Debug)]
 pub struct Database {
     pub id_key: String,
-    pub database: HashMap<String, Collection>,
+    pub database: HashMap<String, HashMap<String, Value>>,
 }
 
 impl Database {
-    pub fn new(id_key: &str, data: &Value) -> Result<Self, DatabaseError> {
+    pub fn new(id_key: &str, data: &Value) -> Result<Self, JsmlError> {
         let mut database = HashMap::new();
         let Some(data) = data.as_object() else {
-            return Err(DatabaseError::new("Error: invalid file content"));
+            return Err(JsmlError::new("Error: invalid file content"));
         };
 
         for (key, value) in data {
             let Some(collection) = value.as_array() else {
-                return Err(DatabaseError::new("Error: invalid file content"));
+                return Err(JsmlError::new("Error: invalid file content"));
             };
-            let col = Collection::new(id_key, collection);
-            match col {
-                Ok(col) => {
-                    database.insert(key.to_string(), col);
-                }
-                Err(e) => {
-                    return Err(e);
-                }
+            let mut col = HashMap::new();
+            for item in collection.iter() {
+                let Value::String(key) = &item[id_key] else {
+                return Err(JsmlError::new(
+                    &format!("No field named: '{}'", id_key),
+                ));
+            };
+                col.insert(String::from(key), item.clone());
             }
+            database.insert(key.to_string(), col);
         }
         Ok(Self {
             id_key: String::from(id_key),
             database,
         })
     }
-}
 
-#[derive(Default, Debug)]
-pub struct Collection {
-    pub source: Value,
-    pub collection: HashMap<String, Value>,
-}
-
-impl Collection {
-    pub fn new(id: &str, data: &Vec<Value>) -> Result<Self, DatabaseError> {
-        let mut collection = HashMap::new();
-        for item in data.iter() {
-            let Value::String(key) = &item[id] else {
-                return Err(DatabaseError::new(
-                    format!("No field named: '{}'", id).as_str(),
-                ));
-            };
-            collection.insert(String::from(key), item.clone());
+    pub fn query(&self, route: &str) -> Result<Value, JsmlError> {
+        let Some(collection) = self.database.get(route) else {
+            return Err(JsmlError::new(&format!("collection {route} not found")));
+        };
+        let mut response: Vec<&Value> = vec![];
+        for key in collection.keys().sorted() {
+            response.push(&collection[key]);
         }
-        Ok(Self {
-            source: json!(data),
-            collection,
-        })
+        Ok(json!(response))
     }
 
-    pub fn get_all(&self) -> Value {
-        let mut res: Vec<Value> = vec![];
-        for (_, value) in &self.collection {
-            res.push(value.clone());
+    pub fn get(&self, route: &str, id: &str) -> Result<Value, JsmlError> {
+        let Some(collection) = self.database.get(route) else {
+            return Err(JsmlError::new(&format!("collection {route} not found")));
+        };
+        let Some(response) = collection.get(id) else {
+            return Err(JsmlError::new(&format!("item {route}/{id} not found")));
+        };
+        Ok(json!(response))
+    }
+
+    pub fn delete(&mut self, route: &str, id: &str) -> Result<(), JsmlError> {
+        let Some(collection) = self.database.get_mut(route) else {
+            return Err(JsmlError::new(&format!("collection {route} not found")));
+        };
+        match collection.remove(id) {
+            None => Err(JsmlError::new(&format!("item {route}/{id} not found"))),
+            _ => Ok(()),
         }
-        json!(res)
+    }
+
+    pub fn put(&mut self, route: &str, id: &str, body: &Value) -> Result<Value, JsmlError> {
+        let Some(col) = self.database.get_mut(route) else {
+            return Err(JsmlError::new(&format!("collection {route} not found")));
+        };
+        let Some(item) = col.get_mut(id) else {
+            return Err(JsmlError::new(&format!("item {route}/{id} not found")));
+        };
+        let Some(body) = body.as_object() else {
+            return Err(JsmlError::new(&format!("invalid request body")));
+        };
+
+        item.as_object_mut();
+        let id = &item[&self.id_key].clone();
+        *item = json!(serde_json::Value::Null);
+        for (key, value) in body {
+            item[key] = value.clone();
+        }
+        item[&self.id_key] = id.clone();
+        Ok(item.clone())
+    }
+
+    pub fn patch(&mut self, route: &str, id: &str, body: &Value) -> Result<Value, JsmlError> {
+        let Some(col) = self.database.get_mut(route) else {
+            return Err(JsmlError::new(&format!("collection {route} not found")));
+        };
+        let Some(item) = col.get_mut(id) else {
+            return Err(JsmlError::new(&format!("item {route}/{id} not found")));
+        };
+        let Some(body) = body.as_object() else {
+            return Err(JsmlError::new(&format!("invalid request body")));
+        };
+
+        item.as_object_mut();
+        for (key, value) in body {
+            item[key] = value.to_owned();
+        }
+        Ok(item.clone())
+    }
+
+    pub fn post(&mut self, route: &str, body: &Value) -> Result<Value, JsmlError> {
+        let Some(col) = self.database.get_mut(route) else {
+            return Err(JsmlError::new(&format!("collection {route} not found")));
+        };
+        let Some(body) = body.as_object() else {
+            return Err(JsmlError::new(&format!("invalid request body")));
+        };
+        let mut body = body.to_owned();
+        if let Some(id) = &body.get(&self.id_key) {
+            let Some(id) = id.as_str() else {
+                return Err(JsmlError::new(&format!("invalid request body")));
+            };
+            if let Some(_) = col.get(id) {
+                return Err(JsmlError::new(&format!("duplicate id: {id}")));
+            }
+        } else {
+            body.insert(self.id_key.clone(), json!(Uuid::new_v4().to_string()));
+        }
+        col.insert(self.id_key.clone(), json!(body));
+        Ok(json!(body))
+    }
+
+    pub fn serialize_all(&self) -> Value {
+        let mut response = json!({});
+        for key in self.database.keys() {
+            let mut result: Vec<&Value> = vec![];
+            for subkey in self.database[key].keys().sorted() {
+                result.push(&self.database[key][subkey]);
+            }
+            response[key] = json!(result);
+        }
+        response
     }
 }

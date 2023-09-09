@@ -1,7 +1,14 @@
 {
   "route1": [
     {
-      "id": "test0"
+      "id": "post1",
+      "key0": "value0",
+      "key1": "value1"
+    },
+    {
+      "id": "post2",
+      "key0": "value0",
+      "key1": "value1"
     },
     {
       "id": "test1",

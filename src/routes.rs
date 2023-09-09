@@ -1,9 +1,8 @@
 use actix_web::{delete, get, patch, post, put, web, HttpResponse, Responder};
-use serde_json::{json, Value};
+use serde_json::Value;
 use std::sync::Mutex;
-use uuid::Uuid;
 
-use crate::database;
+use crate::state::State;
 
 #[get("/")]
 async fn hello() -> impl Responder {
@@ -11,170 +10,85 @@ async fn hello() -> impl Responder {
 }
 
 #[get("/{route}")]
-async fn get_all(
-    path: web::Path<String>,
-    data: web::Data<Mutex<database::Database>>,
-) -> impl Responder {
+async fn get_all(path: web::Path<String>, data: web::Data<Mutex<State>>) -> impl Responder {
     let route = path.into_inner();
     let data = data.lock().unwrap();
-    let Some(collection) = data.database.get(&route) else {
-        return HttpResponse::NotFound().body(format!("collection {route} not found"));
-    };
-
-    match &collection.get_all() {
-        serde_json::Value::Null => {
-            HttpResponse::NotFound().body(format!("collection {route} not found"))
-        }
-        serde_json::Value::Array(collection) => HttpResponse::Ok().json(collection),
-        _ => HttpResponse::InternalServerError().into(),
+    let result = data.query(&route);
+    match result {
+        Ok(response) => HttpResponse::Ok().json(response),
+        Err(e) => HttpResponse::NotFound().body(format!("Error: {e}")),
     }
 }
 
 #[get("/{route}/{id}")]
 async fn get_one(
     path: web::Path<(String, String)>,
-    data: web::Data<Mutex<database::Database>>,
+    data: web::Data<Mutex<State>>,
 ) -> impl Responder {
     let (route, id) = path.into_inner();
     let data = data.lock().unwrap();
-    let Some(col) = &data.database.get(&route) else {
-        return HttpResponse::NotFound().body(format!("collection {route} not found"));
-    };
-    let Some(item) = col.collection.get(&id) else {
-        return HttpResponse::NotFound().body(format!("item {route}/{id} not found"));
-    };
-
-    match item {
-        serde_json::Value::Null => {
-            HttpResponse::NotFound().body(format!("item {route}/{id} not found"))
-        }
-        item => {
-            let Some(item) = item.as_object() else {
-                return HttpResponse::NotFound().body(format!("item {route}/{id} not found"));
-            };
-            HttpResponse::Ok().json(item)
-        }
+    let result = data.get(&route, &id);
+    match result {
+        Ok(response) => HttpResponse::Ok().json(response),
+        Err(e) => HttpResponse::NotFound().body(format!("Error: {e}")),
     }
 }
 
 #[put("/{route}/{id}")]
 async fn put_one(
     path: web::Path<(String, String)>,
-    data: web::Data<Mutex<database::Database>>,
+    data: web::Data<Mutex<State>>,
     body: web::Json<Value>,
 ) -> impl Responder {
     let (route, id) = path.into_inner();
     let mut data = data.lock().unwrap();
-    let Some(col) = data.database.get_mut(&route) else {
-        return HttpResponse::NotFound().body(format!("collection {route} not found"));
-    };
-    let Some(item) = col.collection.get_mut(&id) else {
-        return HttpResponse::NotFound().body(format!("item {route}/{id} not found"));
-    };
-    let Some(body) = body.as_object() else {
-        return HttpResponse::InternalServerError().body("Error: invalid body format");
-    };
-
-    item.as_object_mut();
-    *item = json!(serde_json::Value::Null);
-    for (key, value) in body {
-        item[key] = value.to_owned();
-    }
-
-    match item {
-        serde_json::Value::Null => {
-            HttpResponse::NotFound().body(format!("item {route}/{id} not found"))
-        }
-        item => {
-            let Some(item) = item.as_object() else {
-                return HttpResponse::NotFound().body(format!("item {route}/{id} not found"));
-            };
-            HttpResponse::Ok().json(item)
-        }
+    let result = data.put(&route, &id, &body);
+    match result {
+        Ok(response) => HttpResponse::Ok().json(response),
+        Err(e) => HttpResponse::NotFound().body(format!("Error: {e}")),
     }
 }
 
 #[patch("/{route}/{id}")]
 async fn patch_one(
     path: web::Path<(String, String)>,
-    data: web::Data<Mutex<database::Database>>,
+    data: web::Data<Mutex<State>>,
     body: web::Json<Value>,
 ) -> impl Responder {
     let (route, id) = path.into_inner();
     let mut data = data.lock().unwrap();
-    let Some(col) = data.database.get_mut(&route) else {
-        return HttpResponse::NotFound().body(format!("collection {route} not found"));
-    };
-    let Some(item) = col.collection.get_mut(&id) else {
-        return HttpResponse::NotFound().body(format!("item {route}/{id} not found"));
-    };
-    let Some(body) = body.as_object() else {
-        return HttpResponse::InternalServerError().body("Error: invalid body format");
-    };
-
-    item.as_object_mut();
-    for (key, value) in body {
-        item[key] = value.to_owned();
-    }
-
-    match item {
-        serde_json::Value::Null => {
-            HttpResponse::NotFound().body(format!("item {route}/{id} not found"))
-        }
-        item => {
-            let Some(item) = item.as_object() else {
-                return HttpResponse::NotFound().body(format!("item {route}/{id} not found"));
-            };
-            HttpResponse::Ok().json(item)
-        }
+    let result = data.patch(&route, &id, &body);
+    match result {
+        Ok(response) => HttpResponse::Ok().json(response),
+        Err(e) => HttpResponse::NotFound().body(format!("Error: {e}")),
     }
 }
 
 #[post("/{route}")]
 async fn post_one(
     path: web::Path<String>,
-    data: web::Data<Mutex<database::Database>>,
+    data: web::Data<Mutex<State>>,
     body: web::Json<Value>,
 ) -> impl Responder {
     let route = path.into_inner();
     let mut data = data.lock().unwrap();
-    let key = data.id_key.to_string();
-    let Some(collection) = data.database.get_mut(&route) else {
-        return HttpResponse::NotFound().body(format!("collection {route} not found"));
-    };
-    let mut body = body.0;
-    let id: Option<String> = match &body[&key] {
-        Value::Null => {
-            let _id = Uuid::new_v4().to_string();
-            body[key] = json!(&_id);
-            Some(_id)
-        }
-        Value::String(current_id) => Some(current_id.to_owned()),
-        _ => None,
-    };
-    let Some(id) = id else {
-        return HttpResponse::NotFound().body(format!("collection {route} not found"));
-    };
-    let res = body.clone();
-    collection.collection.insert(id, body);
-
-    HttpResponse::Ok().json(res)
+    let result = data.post(&route, &body);
+    match result {
+        Ok(response) => HttpResponse::Ok().json(response),
+        Err(e) => HttpResponse::NotFound().body(format!("Error: {e}")),
+    }
 }
 
 #[delete("/{route}/{id}")]
 async fn delete(
     path: web::Path<(String, String)>,
-    data: web::Data<Mutex<database::Database>>,
+    data: web::Data<Mutex<State>>,
 ) -> impl Responder {
     let (route, id) = path.into_inner();
     let mut data = data.lock().unwrap();
-    let Some(collection) = data.database.get_mut(&route) else {
-        return HttpResponse::NotFound().body(format!("collection {route} not found"));
-    };
-    let result = collection.collection.remove(&id);
-    if result == None {
-        return HttpResponse::NotFound().body(format!("item {route}/{id} not found"));
+    let result = data.delete(&route, &id);
+    match result {
+        Err(e) => HttpResponse::NotFound().body(format!("Error: {e}")),
+        _ => HttpResponse::Ok().into(),
     }
-
-    HttpResponse::Ok().into()
 }

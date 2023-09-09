@@ -5,6 +5,7 @@ use actix_web::{web, App, HttpServer};
 use clap::Parser;
 
 mod database;
+mod jsml_error;
 mod routes;
 mod source;
 mod state;
@@ -29,23 +30,13 @@ struct Args {
 async fn main() -> std::io::Result<()> {
     let args = Args::parse();
     let state = state::State::new(args.source.as_str(), args.id.as_str())?;
-    let mut data = source::Source::from(args.source.as_str());
-    if let Err(e) = data.process() {
-        eprintln!("Error: {e}");
-        std::process::exit(1)
-    }
-    let Ok(database) = database::Database::new(args.id.as_str(), &data.source) else {
-        eprintln!("Error: invalid file content");
-        std::process::exit(1)
-    };
-
-    let database = web::Data::new(Mutex::new(database));
+    let state = web::Data::new(Mutex::new(state));
 
     HttpServer::new(move || {
         let cors = Cors::permissive();
         App::new()
             .wrap(cors)
-            .app_data(database.clone())
+            .app_data(state.clone())
             .service(routes::hello)
             .service(routes::get_all)
             .service(routes::get_one)
