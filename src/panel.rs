@@ -5,6 +5,9 @@ use html_to_string_macro::html;
 
 use crate::state::State;
 
+// TODO: add in the head tag to add advanced UI behavior to the panel
+// <script src="https://unpkg.com/htmx.org@1.9.5" integrity="sha384-xcuj3WpfgjlKF+FXhSQFQ0ZNr39ln+hwjN3npfM9VBnUskLolQAcN80McRIVOPuO" crossorigin="anonymous"></script>
+
 fn display_routes(routes: Vec<&str>) -> String {
     let mut result = String::new();
     for route in routes.iter() {
@@ -27,10 +30,9 @@ pub async fn hello(data: web::Data<Mutex<State>>) -> impl Responder {
         <html>
             <head>
                 <title>"JSML Server"</title>
-                <script src="https://unpkg.com/htmx.org@1.9.5" integrity="sha384-xcuj3WpfgjlKF+FXhSQFQ0ZNr39ln+hwjN3npfM9VBnUskLolQAcN80McRIVOPuO" crossorigin="anonymous"></script>
             </head>
             <body>
-                <h1>"Welcome to Jsml Server !"</h1>
+                <h1>"Welcome to JSML Server Panel !"</h1>
                 { display_routes(routes) }
             </body>
         </html>
