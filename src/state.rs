@@ -4,8 +4,9 @@ use crate::database::Database;
 use crate::jsml_error::JsmlError;
 use crate::source::Source;
 
+#[derive(Debug)]
 pub struct State {
-    database: Database,
+    pub database: Database,
     source: Source,
 }
 

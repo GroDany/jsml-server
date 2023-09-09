@@ -6,6 +6,7 @@ use clap::Parser;
 
 mod database;
 mod jsml_error;
+mod panel;
 mod routes;
 mod source;
 mod state;
@@ -37,7 +38,7 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .wrap(cors)
             .app_data(state.clone())
-            .service(routes::hello)
+            .service(panel::hello)
             .service(routes::get_all)
             .service(routes::get_one)
             .service(routes::put_one)

@@ -4,11 +4,6 @@ use std::sync::Mutex;
 
 use crate::state::State;
 
-#[get("/")]
-async fn hello() -> impl Responder {
-    HttpResponse::Ok().body("Greetings !")
-}
-
 #[get("/{route}")]
 async fn get_all(path: web::Path<String>, data: web::Data<Mutex<State>>) -> impl Responder {
     let route = path.into_inner();
