@@ -6,6 +6,7 @@ use clap::Parser;
 
 mod database;
 mod jsml_error;
+mod logger;
 mod panel;
 mod routes;
 mod source;
@@ -13,7 +14,7 @@ mod state;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
-struct Args {
+pub struct Args {
     /// Path of the source json file
     #[arg(short, long)]
     source: String,
@@ -30,7 +31,7 @@ struct Args {
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     let args = Args::parse();
-    let state = state::State::new(args.source.as_str(), args.id.as_str())?;
+    let state = state::State::new(&args)?;
     let state = web::Data::new(Mutex::new(state));
 
     HttpServer::new(move || {

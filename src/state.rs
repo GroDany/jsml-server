@@ -1,20 +1,30 @@
+use std::sync::Arc;
+
 use serde_json::{json, Value};
 
 use crate::database::Database;
 use crate::jsml_error::JsmlError;
+use crate::logger::LogEntry;
 use crate::source::Source;
+use crate::Args;
 
-#[derive(Debug)]
 pub struct State {
+    pub port: usize,
     pub database: Database,
     source: Source,
+    pub entries: Vec<Arc<dyn LogEntry>>,
 }
 
 impl State {
-    pub fn new(path: &str, id_key: &str) -> Result<Self, JsmlError> {
-        let mut source = Source::new(path);
-        let database = Database::new(id_key, &source.process()?)?;
-        Ok(Self { database, source })
+    pub fn new(args: &Args) -> Result<Self, JsmlError> {
+        let mut source = Source::new(&args.source);
+        let database = Database::new(&args.id, &source.process()?)?;
+        Ok(Self {
+            port: args.port,
+            database,
+            source,
+            entries: vec![],
+        })
     }
 
     pub fn query(&self, route: &str) -> Result<Value, JsmlError> {

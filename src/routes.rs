@@ -1,17 +1,33 @@
-use actix_web::{delete, get, patch, post, put, web, HttpResponse, Responder};
+use actix_web::{delete, get, http::StatusCode, patch, post, put, web, HttpResponse, Responder};
 use serde_json::Value;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
-use crate::state::State;
+use crate::{
+    logger::{LogEntry, RouteEntry},
+    state::State,
+};
+
+// TODO: Delete unwraps !
+// TODO: Add logger to all requests !
 
 #[get("/{route}")]
 async fn get_all(path: web::Path<String>, data: web::Data<Mutex<State>>) -> impl Responder {
     let route = path.into_inner();
-    let data = data.lock().unwrap();
+    let mut data = data.lock().unwrap();
+    let mut log = RouteEntry::new(&format!("localhost:{}/{route}", data.port));
     let result = data.query(&route);
     match result {
-        Ok(response) => HttpResponse::Ok().json(response),
-        Err(e) => HttpResponse::NotFound().body(format!("Error: {e}")),
+        Ok(response) => {
+            log.update(StatusCode::OK);
+            data.entries.push(Arc::new(log));
+            return HttpResponse::Ok().json(response);
+        }
+        Err(e) => {
+            log.update(StatusCode::NOT_FOUND);
+            data.entries.push(Arc::new(log));
+            // TODO: !
+            return HttpResponse::NotFound().body(format!("Error: {e}"));
+        }
     }
 }
 
