@@ -8,7 +8,6 @@ use crate::{
 };
 
 // TODO: Delete unwraps !
-// TODO: Add logger to all requests !
 
 #[get("/{route}")]
 async fn get_all(path: web::Path<String>, data: web::Data<Mutex<State>>) -> impl Responder {
@@ -25,7 +24,6 @@ async fn get_all(path: web::Path<String>, data: web::Data<Mutex<State>>) -> impl
         Err(e) => {
             log.update(StatusCode::NOT_FOUND);
             data.entries.push(Arc::new(log));
-            // TODO: !
             return HttpResponse::NotFound().body(format!("Error: {e}"));
         }
     }
@@ -37,11 +35,20 @@ async fn get_one(
     data: web::Data<Mutex<State>>,
 ) -> impl Responder {
     let (route, id) = path.into_inner();
-    let data = data.lock().unwrap();
+    let mut data = data.lock().unwrap();
+    let mut log = RouteEntry::new(&format!("localhost:{}/{route}/{id}", data.port));
     let result = data.get(&route, &id);
     match result {
-        Ok(response) => HttpResponse::Ok().json(response),
-        Err(e) => HttpResponse::NotFound().body(format!("Error: {e}")),
+        Ok(response) => {
+            log.update(StatusCode::OK);
+            data.entries.push(Arc::new(log));
+            return HttpResponse::Ok().json(response);
+        }
+        Err(e) => {
+            log.update(StatusCode::NOT_FOUND);
+            data.entries.push(Arc::new(log));
+            return HttpResponse::NotFound().body(format!("Error: {e}"));
+        }
     }
 }
 
@@ -53,10 +60,19 @@ async fn put_one(
 ) -> impl Responder {
     let (route, id) = path.into_inner();
     let mut data = data.lock().unwrap();
+    let mut log = RouteEntry::new(&format!("localhost:{}/{route}/{id}", data.port));
     let result = data.put(&route, &id, &body);
     match result {
-        Ok(response) => HttpResponse::Ok().json(response),
-        Err(e) => HttpResponse::NotFound().body(format!("Error: {e}")),
+        Ok(response) => {
+            log.update(StatusCode::OK);
+            data.entries.push(Arc::new(log));
+            return HttpResponse::Ok().json(response);
+        }
+        Err(e) => {
+            log.update(StatusCode::NOT_FOUND);
+            data.entries.push(Arc::new(log));
+            return HttpResponse::NotFound().body(format!("Error: {e}"));
+        }
     }
 }
 
@@ -68,10 +84,19 @@ async fn patch_one(
 ) -> impl Responder {
     let (route, id) = path.into_inner();
     let mut data = data.lock().unwrap();
+    let mut log = RouteEntry::new(&format!("localhost:{}/{route}/{id}", data.port));
     let result = data.patch(&route, &id, &body);
     match result {
-        Ok(response) => HttpResponse::Ok().json(response),
-        Err(e) => HttpResponse::NotFound().body(format!("Error: {e}")),
+        Ok(response) => {
+            log.update(StatusCode::OK);
+            data.entries.push(Arc::new(log));
+            return HttpResponse::Ok().json(response);
+        }
+        Err(e) => {
+            log.update(StatusCode::NOT_FOUND);
+            data.entries.push(Arc::new(log));
+            return HttpResponse::NotFound().body(format!("Error: {e}"));
+        }
     }
 }
 
@@ -83,10 +108,19 @@ async fn post_one(
 ) -> impl Responder {
     let route = path.into_inner();
     let mut data = data.lock().unwrap();
+    let mut log = RouteEntry::new(&format!("localhost:{}/{route}", data.port));
     let result = data.post(&route, &body);
     match result {
-        Ok(response) => HttpResponse::Ok().json(response),
-        Err(e) => HttpResponse::NotFound().body(format!("Error: {e}")),
+        Ok(response) => {
+            log.update(StatusCode::OK);
+            data.entries.push(Arc::new(log));
+            return HttpResponse::Ok().json(response);
+        }
+        Err(e) => {
+            log.update(StatusCode::NOT_FOUND);
+            data.entries.push(Arc::new(log));
+            return HttpResponse::NotFound().body(format!("Error: {e}"));
+        }
     }
 }
 
@@ -97,9 +131,18 @@ async fn delete(
 ) -> impl Responder {
     let (route, id) = path.into_inner();
     let mut data = data.lock().unwrap();
+    let mut log = RouteEntry::new(&format!("localhost:{}/{route}/{id}", data.port));
     let result = data.delete(&route, &id);
     match result {
-        Err(e) => HttpResponse::NotFound().body(format!("Error: {e}")),
-        _ => HttpResponse::Ok().into(),
+        Ok(response) => {
+            log.update(StatusCode::OK);
+            data.entries.push(Arc::new(log));
+            return HttpResponse::Ok().json(response);
+        }
+        Err(e) => {
+            log.update(StatusCode::NOT_FOUND);
+            data.entries.push(Arc::new(log));
+            return HttpResponse::NotFound().body(format!("Error: {e}"));
+        }
     }
 }
