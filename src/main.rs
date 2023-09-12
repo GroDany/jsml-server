@@ -40,6 +40,7 @@ async fn main() -> std::io::Result<()> {
             .wrap(cors)
             .app_data(state.clone())
             .service(panel::hello)
+            .service(panel::test)
             .service(routes::get_all)
             .service(routes::get_one)
             .service(routes::put_one)

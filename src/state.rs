@@ -11,8 +11,8 @@ use crate::Args;
 pub struct State {
     pub port: usize,
     pub database: Database,
-    source: Source,
     pub entries: Vec<Arc<dyn LogEntry>>,
+    source: Source,
 }
 
 impl State {
