@@ -27,12 +27,12 @@ impl fmt::Display for JsmlError {
 
 impl From<JsmlError> for std::io::Error {
     fn from(err: JsmlError) -> Self {
-        std::io::Error::new(std::io::ErrorKind::Other, err.details.as_str())
+        Self::new(std::io::ErrorKind::Other, err.details.as_str())
     }
 }
 
 impl From<std::io::Error> for JsmlError {
     fn from(err: std::io::Error) -> Self {
-        JsmlError::new(&err.to_string())
+        Self::new(&err.to_string())
     }
 }

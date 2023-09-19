@@ -8,7 +8,7 @@ use crate::state::State;
 
 fn display_routes(r: Vec<&str>) -> String {
     let mut result = String::new();
-    for route in r.iter() {
+    for route in r {
         let item = html!(
             <h2
                 {format!("hx-get=\"/htmx_{route}\"")}
@@ -25,12 +25,12 @@ fn display_routes(r: Vec<&str>) -> String {
 }
 
 fn display_item(i: &Value) -> String {
-    return i.to_string();
+    i.to_string()
 }
 
-fn display_items(r: Value) -> String {
+fn display_items(r: &Value) -> String {
     let Some(r) = r.as_array() else {
-        return format!("Error: invalid data format");
+        return "Error: invalid data format".to_string();
     };
     let mut result = String::new();
     for data in r.iter() {
@@ -46,21 +46,22 @@ fn display_items(r: Value) -> String {
 
 #[get("/htmx_{route}")]
 pub async fn routes(path: web::Path<String>, data: web::Data<Mutex<State>>) -> impl Responder {
-    let data = data.lock().unwrap();
     let route = path.into_inner();
-    let Ok(items) = data.query(&route) else {
+    let Ok(items) = data.lock().expect("Internal Error").query(&route) else {
        return HttpResponse::Ok()
             .content_type("text/html; charset=utf-8")
-            .body(format!("Error {} not found", route));
+            .body(format!("Error {route} not found"));
     };
     HttpResponse::Ok()
         .content_type("text/html; charset=utf-8")
-        .body(display_items(items))
+        .body(display_items(&items))
 }
 
 #[get("/")]
 pub async fn hello(data: web::Data<Mutex<State>>) -> impl Responder {
-    let data = data.lock().unwrap();
+    let Ok(data) = data.lock() else {
+        return HttpResponse::InternalServerError().body("Internal Server Error");
+    };
     let mut r = vec![];
     for key in data.database.database.keys() {
         r.push(key.as_str());

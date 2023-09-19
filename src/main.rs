@@ -1,4 +1,6 @@
-use std::sync::Mutex;
+#![warn(clippy::all, clippy::perf)]
+
+use std::{io::Error, sync::Mutex};
 
 use actix_cors::Cors;
 use actix_web::{web, App, HttpServer};
@@ -33,6 +35,9 @@ async fn main() -> std::io::Result<()> {
     let args = Args::parse();
     let state = state::State::new(&args)?;
     let state = web::Data::new(Mutex::new(state));
+    let Ok(port) = u16::try_from(args.port) else {
+        return Err(Error::new(std::io::ErrorKind::InvalidData, "Invalid port"));
+    };
 
     HttpServer::new(move || {
         let cors = Cors::permissive();
@@ -48,7 +53,7 @@ async fn main() -> std::io::Result<()> {
             .service(routes::patch_one)
             .service(routes::delete)
     })
-    .bind(("127.0.0.1", args.port as u16))?
+    .bind(("127.0.0.1", port))?
     .run()
     .await
 }

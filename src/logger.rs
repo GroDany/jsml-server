@@ -29,7 +29,7 @@ impl RouteEntry {
 
 impl Display for RouteEntry {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        let mut result = format!(" ");
+        let mut result = " ".to_string();
         if let Some(code) = self.code {
             result = format!("{result}{code}");
         }

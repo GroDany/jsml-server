@@ -36,12 +36,12 @@ impl State {
     }
 
     pub fn delete(&mut self, route: &str, id: &str) -> Result<(), JsmlError> {
-        let result = self.database.delete(&route, &id);
+        let result = self.database.delete(route, id);
         match result {
             Ok(_) => {
                 let content = json!(self.database.serialize_all());
                 self.source.write_all(&content)?;
-                return Ok(());
+                Ok(())
             }
             Err(e) => Err(e),
         }
@@ -53,7 +53,7 @@ impl State {
             Ok(res) => {
                 let content = json!(self.database.serialize_all());
                 self.source.write_all(&content)?;
-                return Ok(res);
+                Ok(res)
             }
             Err(e) => Err(e),
         }
@@ -65,7 +65,7 @@ impl State {
             Ok(res) => {
                 let content = json!(self.database.serialize_all());
                 self.source.write_all(&content)?;
-                return Ok(res);
+                Ok(res)
             }
             Err(e) => Err(e),
         }
@@ -77,7 +77,7 @@ impl State {
             Ok(res) => {
                 let content = json!(self.database.serialize_all());
                 self.source.write_all(&content)?;
-                return Ok(res);
+                Ok(res)
             }
             Err(e) => Err(e),
         }

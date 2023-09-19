@@ -26,7 +26,7 @@ impl Database {
             for item in collection.iter() {
                 let Value::String(key) = &item[id_key] else {
                 return Err(JsmlError::new(
-                    &format!("No field named: '{}'", id_key),
+                    &format!("No field named: '{id_key}'"),
                 ));
             };
                 col.insert(String::from(key), item.clone());
@@ -78,7 +78,7 @@ impl Database {
             return Err(JsmlError::new(&format!("item {route}/{id} not found")));
         };
         let Some(body) = body.as_object() else {
-            return Err(JsmlError::new(&format!("invalid request body")));
+            return Err(JsmlError::new("invalid request body"));
         };
 
         item.as_object_mut();
@@ -99,12 +99,12 @@ impl Database {
             return Err(JsmlError::new(&format!("item {route}/{id} not found")));
         };
         let Some(body) = body.as_object() else {
-            return Err(JsmlError::new(&format!("invalid request body")));
+            return Err(JsmlError::new("invalid request body"));
         };
 
         item.as_object_mut();
         for (key, value) in body {
-            item[key] = value.to_owned();
+            item[key] = value.clone();
         }
         Ok(item.clone())
     }
@@ -114,14 +114,14 @@ impl Database {
             return Err(JsmlError::new(&format!("collection {route} not found")));
         };
         let Some(body) = body.as_object() else {
-            return Err(JsmlError::new(&format!("invalid request body")));
+            return Err(JsmlError::new("invalid request body"));
         };
-        let mut body = body.to_owned();
+        let mut body = body.clone();
         if let Some(id) = &body.get(&self.id_key) {
             let Some(id) = id.as_str() else {
-                return Err(JsmlError::new(&format!("invalid request body")));
+                return Err(JsmlError::new("invalid request body"));
             };
-            if let Some(_) = col.get(id) {
+            if col.get(id).is_some() {
                 return Err(JsmlError::new(&format!("duplicate id: {id}")));
             }
         } else {
