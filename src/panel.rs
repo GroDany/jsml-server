@@ -11,7 +11,7 @@ fn display_routes(r: Vec<&str>) -> String {
     for route in r {
         let item = html!(
             <h2
-                {format!("hx-get=\"/htmx_{route}\"")}
+                { format!("hx-get=\"/htmx_{route}\"") }
                 hx-trigger="click"
                 hx-target="#collection"
                 style="padding: 0 10%; text-align: center"
@@ -73,7 +73,8 @@ pub async fn hello(data: web::Data<Mutex<State>>) -> impl Responder {
                 <script
                     src="https://unpkg.com/htmx.org@1.9.5"
                     integrity="sha384-xcuj3WpfgjlKF+FXhSQFQ0ZNr39ln+hwjN3npfM9VBnUskLolQAcN80McRIVOPuO"
-                    crossorigin="anonymous">
+                    crossorigin="anonymous"
+                >
                 </script>
             </head>
             <body>
