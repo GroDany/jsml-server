@@ -11,7 +11,7 @@ use crate::Args;
 pub struct State {
     pub port: usize,
     pub database: Database,
-    pub entries: Vec<Arc<dyn LogEntry>>,
+    entries: Vec<Arc<dyn LogEntry>>,
     source: Source,
 }
 
@@ -39,8 +39,7 @@ impl State {
         let result = self.database.delete(route, id);
         match result {
             Ok(_) => {
-                let content = json!(self.database.serialize_all());
-                self.source.write_all(&content)?;
+                self.source.write_all(&self.database)?;
                 Ok(())
             }
             Err(e) => Err(e),
@@ -51,8 +50,7 @@ impl State {
         let result = self.database.put(route, id, body);
         match result {
             Ok(res) => {
-                let content = json!(self.database.serialize_all());
-                self.source.write_all(&content)?;
+                self.source.write_all(&self.database)?;
                 Ok(res)
             }
             Err(e) => Err(e),
@@ -63,8 +61,7 @@ impl State {
         let result = self.database.patch(route, id, body);
         match result {
             Ok(res) => {
-                let content = json!(self.database.serialize_all());
-                self.source.write_all(&content)?;
+                self.source.write_all(&self.database)?;
                 Ok(res)
             }
             Err(e) => Err(e),
@@ -75,11 +72,14 @@ impl State {
         let result = self.database.post(route, body);
         match result {
             Ok(res) => {
-                let content = json!(self.database.serialize_all());
-                self.source.write_all(&content)?;
+                self.source.write_all(&self.database)?;
                 Ok(res)
             }
             Err(e) => Err(e),
         }
+    }
+
+    pub fn log(&mut self, entry: impl LogEntry + 'static) {
+        self.entries.push(Arc::new(entry));
     }
 }

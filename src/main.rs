@@ -3,7 +3,7 @@
 use std::{io::Error, sync::Mutex};
 
 use actix_cors::Cors;
-use actix_web::{web, App, HttpServer};
+use actix_web::{middleware, web, App, HttpServer};
 use clap::Parser;
 
 mod database;
@@ -42,6 +42,7 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         let cors = Cors::permissive();
         App::new()
+            .wrap(middleware::NormalizePath::trim())
             .wrap(cors)
             .app_data(state.clone())
             .service(panel::hello)

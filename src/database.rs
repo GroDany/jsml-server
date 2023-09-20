@@ -127,8 +127,9 @@ impl Database {
         } else {
             body.insert(self.id_key.clone(), json!(Uuid::new_v4().to_string()));
         }
-        col.insert(self.id_key.clone(), json!(body));
-        Ok(json!(body))
+        let body = json!(body);
+        col.insert(self.id_key.clone(), body.clone());
+        Ok(body)
     }
 
     pub fn serialize_all(&self) -> Value {

@@ -33,6 +33,7 @@ impl Display for RouteEntry {
         if let Some(code) = self.code {
             result = format!("{result}{code}");
         }
+
         result = format!(
             "{result} - {} - {} µs",
             &self.path,

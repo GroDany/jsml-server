@@ -1,6 +1,6 @@
 use actix_web::{delete, get, http::StatusCode, patch, post, put, web, HttpResponse, Responder};
 use serde_json::Value;
-use std::sync::{Arc, Mutex};
+use std::sync::Mutex;
 
 use crate::{
     logger::{LogEntry, RouteEntry},
@@ -18,12 +18,12 @@ async fn get_all(path: web::Path<String>, data: web::Data<Mutex<State>>) -> impl
     match result {
         Ok(response) => {
             log.update(StatusCode::OK);
-            data.entries.push(Arc::new(log));
+            data.log(log);
             HttpResponse::Ok().json(response)
         }
         Err(e) => {
             log.update(StatusCode::NOT_FOUND);
-            data.entries.push(Arc::new(log));
+            data.log(log);
             HttpResponse::NotFound().body(format!("Error: {e}"))
         }
     }
@@ -43,12 +43,12 @@ async fn get_one(
     match result {
         Ok(response) => {
             log.update(StatusCode::OK);
-            data.entries.push(Arc::new(log));
+            data.log(log);
             HttpResponse::Ok().json(response)
         }
         Err(e) => {
             log.update(StatusCode::NOT_FOUND);
-            data.entries.push(Arc::new(log));
+            data.log(log);
             HttpResponse::NotFound().body(format!("Error: {e}"))
         }
     }
@@ -69,12 +69,12 @@ async fn put_one(
     match result {
         Ok(response) => {
             log.update(StatusCode::OK);
-            data.entries.push(Arc::new(log));
+            data.log(log);
             HttpResponse::Ok().json(response)
         }
         Err(e) => {
             log.update(StatusCode::NOT_FOUND);
-            data.entries.push(Arc::new(log));
+            data.log(log);
             HttpResponse::NotFound().body(format!("Error: {e}"))
         }
     }
@@ -95,12 +95,12 @@ async fn patch_one(
     match result {
         Ok(response) => {
             log.update(StatusCode::OK);
-            data.entries.push(Arc::new(log));
+            data.log(log);
             HttpResponse::Ok().json(response)
         }
         Err(e) => {
             log.update(StatusCode::NOT_FOUND);
-            data.entries.push(Arc::new(log));
+            data.log(log);
             HttpResponse::NotFound().body(format!("Error: {e}"))
         }
     }
@@ -121,12 +121,12 @@ async fn post_one(
     match result {
         Ok(response) => {
             log.update(StatusCode::OK);
-            data.entries.push(Arc::new(log));
+            data.log(log);
             HttpResponse::Ok().json(response)
         }
         Err(e) => {
             log.update(StatusCode::NOT_FOUND);
-            data.entries.push(Arc::new(log));
+            data.log(log);
             HttpResponse::NotFound().body(format!("Error: {e}"))
         }
     }
@@ -146,12 +146,12 @@ async fn delete(
     match result {
         Ok(response) => {
             log.update(StatusCode::OK);
-            data.entries.push(Arc::new(log));
+            data.log(log);
             HttpResponse::Ok().json(response)
         }
         Err(e) => {
             log.update(StatusCode::NOT_FOUND);
-            data.entries.push(Arc::new(log));
+            data.log(log);
             HttpResponse::NotFound().body(format!("Error: {e}"))
         }
     }

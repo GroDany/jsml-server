@@ -4,6 +4,8 @@ use std::{
     io::{BufWriter, Read, Write},
 };
 
+use crate::database::Database;
+
 #[derive(Debug)]
 pub struct Source {
     pub path: String,
@@ -24,10 +26,10 @@ impl Source {
         Ok(source)
     }
 
-    pub fn write_all(&self, content: &Value) -> std::io::Result<()> {
+    pub fn write_all(&self, db: &Database) -> std::io::Result<()> {
         let file = File::create(&self.path)?;
         let mut writer = BufWriter::new(&file);
-        serde_json::to_writer_pretty(&mut writer, &content)?;
+        serde_json::to_writer_pretty(&mut writer, &db.serialize_all())?;
         writer.flush()?;
         Ok(())
     }
