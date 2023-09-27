@@ -738,6 +738,7 @@ dependencies = [
  "clap",
  "html-to-string-macro",
  "itertools",
+ "serde",
  "serde_json",
  "uuid",
 ]

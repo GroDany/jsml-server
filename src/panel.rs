@@ -11,7 +11,7 @@ fn display_routes(r: Vec<&str>) -> String {
     for route in r {
         let item = html!(
             <h2
-                { format!("hx-get=\"/htmx_{route}\"") }
+                { format!("hx-get=\"/jsml_{route}\"") }
                 hx-trigger="click"
                 hx-target="#collection"
                 style="padding: 0 10%; text-align: center"
@@ -44,10 +44,10 @@ fn display_items(r: &Value) -> String {
     result
 }
 
-#[get("/htmx_{route}")]
+#[get("/jsml_{route}")]
 pub async fn routes(path: web::Path<String>, data: web::Data<Mutex<State>>) -> impl Responder {
     let route = path.into_inner();
-    let Ok(items) = data.lock().expect("Internal Error").query(&route) else {
+    let Ok(items) = data.lock().expect("Internal Error").query(&route, None, None) else {
        return HttpResponse::Ok()
             .content_type("text/html; charset=utf-8")
             .body(format!("Error {route} not found"));

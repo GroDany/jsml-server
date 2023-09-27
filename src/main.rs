@@ -18,7 +18,7 @@ mod state;
 #[command(author, version, about, long_about = None)]
 pub struct Args {
     /// Path of the source json file
-    #[arg(short, long)]
+    #[arg()]
     source: String,
 
     /// Port default: 4242

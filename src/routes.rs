@@ -1,4 +1,5 @@
 use actix_web::{delete, get, http::StatusCode, patch, post, put, web, HttpResponse, Responder};
+use serde::Deserialize;
 use serde_json::Value;
 use std::sync::Mutex;
 
@@ -7,13 +8,23 @@ use crate::{
     state::State,
 };
 
+#[derive(Debug, Deserialize)]
+struct QueryParams {
+    limit: Option<usize>,
+    page: Option<usize>,
+}
+
 #[get("/{route}")]
-async fn get_all(path: web::Path<String>, data: web::Data<Mutex<State>>) -> impl Responder {
+async fn get_all(
+    path: web::Path<String>,
+    query: web::Query<QueryParams>,
+    data: web::Data<Mutex<State>>,
+) -> impl Responder {
     let route = path.into_inner();
     let Ok(mut data) = data.lock() else {
         return HttpResponse::InternalServerError().body("Internal Server Error");
     };
-    let result = data.query(&route);
+    let result = data.query(&route, query.page, query.limit);
     let mut log = RouteEntry::new(&format!("localhost:{}/{route}", data.port));
     match result {
         Ok(response) => {
@@ -65,7 +76,8 @@ async fn put_one(
         return HttpResponse::InternalServerError().body("Internal Server Error");
     };
     let mut log = RouteEntry::new(&format!("localhost:{}/{route}/{id}", data.port));
-    let result = data.put(&route, &id, &body);
+    let flush = false;
+    let result = data.put(&route, &id, &body, flush);
     match result {
         Ok(response) => {
             log.update(StatusCode::OK);
@@ -91,7 +103,8 @@ async fn patch_one(
         return HttpResponse::InternalServerError().body("Internal Server Error");
     };
     let mut log = RouteEntry::new(&format!("localhost:{}/{route}/{id}", data.port));
-    let result = data.patch(&route, &id, &body);
+    let flush = false;
+    let result = data.patch(&route, &id, &body, flush);
     match result {
         Ok(response) => {
             log.update(StatusCode::OK);
@@ -117,7 +130,8 @@ async fn post_one(
         return HttpResponse::InternalServerError().body("Internal Server Error");
     };
     let mut log = RouteEntry::new(&format!("localhost:{}/{route}", data.port));
-    let result = data.post(&route, &body);
+    let flush = false;
+    let result = data.post(&route, &body, flush);
     match result {
         Ok(response) => {
             log.update(StatusCode::OK);
@@ -142,7 +156,8 @@ async fn delete(
         return HttpResponse::InternalServerError().body("Internal Server Error");
     };
     let mut log = RouteEntry::new(&format!("localhost:{}/{route}/{id}", data.port));
-    let result = data.delete(&route, &id);
+    let flush = false;
+    let result = data.delete(&route, &id, flush);
     match result {
         Ok(response) => {
             log.update(StatusCode::OK);

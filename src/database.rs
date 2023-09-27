@@ -39,13 +39,24 @@ impl Database {
         })
     }
 
-    pub fn query(&self, route: &str) -> Result<Value, JsmlError> {
+    pub fn query(
+        &self,
+        route: &str,
+        page: Option<usize>,
+        limit: Option<usize>,
+    ) -> Result<Value, JsmlError> {
         let Some(collection) = self.database.get(route) else {
             return Err(JsmlError::new(&format!("collection {route} not found")));
         };
         let mut response: Vec<&Value> = vec![];
-        for key in collection.keys().sorted() {
-            response.push(&collection[key]);
+        if let (Some(page), Some(limit)) = (page, limit) {
+            for key in collection.keys().sorted().skip(limit * page).take(limit) {
+                response.push(&collection[key]);
+            }
+        } else {
+            for key in collection.keys().sorted() {
+                response.push(&collection[key]);
+            }
         }
         Ok(json!(response))
     }
@@ -109,6 +120,8 @@ impl Database {
         Ok(item.clone())
     }
 
+    // TODO: fix post doesn't work every time (only first time ?)
+    // check put / patch / delete too
     pub fn post(&mut self, route: &str, body: &Value) -> Result<Value, JsmlError> {
         let Some(col) = self.database.get_mut(route) else {
             return Err(JsmlError::new(&format!("collection {route} not found")));
