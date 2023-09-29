@@ -120,8 +120,6 @@ impl Database {
         Ok(item.clone())
     }
 
-    // TODO: fix post doesn't work every time (only first time ?)
-    // check put / patch / delete too
     pub fn post(&mut self, route: &str, body: &Value) -> Result<Value, JsmlError> {
         let Some(col) = self.database.get_mut(route) else {
             return Err(JsmlError::new(&format!("collection {route} not found")));
@@ -137,12 +135,16 @@ impl Database {
             if col.get(id).is_some() {
                 return Err(JsmlError::new(&format!("duplicate id: {id}")));
             }
+            let body = json!(body);
+            col.insert(id.to_string(), body.clone());
+            return Ok(body);
         } else {
-            body.insert(self.id_key.clone(), json!(Uuid::new_v4().to_string()));
+            let id = Uuid::new_v4().to_string();
+            body.insert(self.id_key.clone(), json!(id));
+            let body = json!(body);
+            col.insert(id.to_string(), body.clone());
+            return Ok(body);
         }
-        let body = json!(body);
-        col.insert(self.id_key.clone(), body.clone());
-        Ok(body)
     }
 
     pub fn serialize_all(&self) -> Value {

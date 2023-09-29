@@ -10,7 +10,10 @@ use crate::{
 
 #[derive(Debug, Deserialize)]
 struct QueryParams {
+    #[serde(rename = "_limit")]
     limit: Option<usize>,
+
+    #[serde(rename = "_page")]
     page: Option<usize>,
 }
 
@@ -76,8 +79,7 @@ async fn put_one(
         return HttpResponse::InternalServerError().body("Internal Server Error");
     };
     let mut log = RouteEntry::new(&format!("localhost:{}/{route}/{id}", data.port));
-    let flush = false;
-    let result = data.put(&route, &id, &body, flush);
+    let result = data.put(&route, &id, &body, false);
     match result {
         Ok(response) => {
             log.update(StatusCode::OK);
@@ -103,8 +105,7 @@ async fn patch_one(
         return HttpResponse::InternalServerError().body("Internal Server Error");
     };
     let mut log = RouteEntry::new(&format!("localhost:{}/{route}/{id}", data.port));
-    let flush = false;
-    let result = data.patch(&route, &id, &body, flush);
+    let result = data.patch(&route, &id, &body, false);
     match result {
         Ok(response) => {
             log.update(StatusCode::OK);
@@ -130,8 +131,7 @@ async fn post_one(
         return HttpResponse::InternalServerError().body("Internal Server Error");
     };
     let mut log = RouteEntry::new(&format!("localhost:{}/{route}", data.port));
-    let flush = false;
-    let result = data.post(&route, &body, flush);
+    let result = data.post(&route, &body, true);
     match result {
         Ok(response) => {
             log.update(StatusCode::OK);
@@ -156,8 +156,7 @@ async fn delete(
         return HttpResponse::InternalServerError().body("Internal Server Error");
     };
     let mut log = RouteEntry::new(&format!("localhost:{}/{route}/{id}", data.port));
-    let flush = false;
-    let result = data.delete(&route, &id, flush);
+    let result = data.delete(&route, &id, false);
     match result {
         Ok(response) => {
             log.update(StatusCode::OK);
