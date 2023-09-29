@@ -49,7 +49,11 @@ impl Database {
             return Err(JsmlError::new(&format!("collection {route} not found")));
         };
         let mut response: Vec<&Value> = vec![];
-        if let (Some(page), Some(limit)) = (page, limit) {
+        if let Some(page) = page {
+            let limit = match limit {
+                Some(limit) => limit,
+                None => 10,
+            };
             for key in collection.keys().sorted().skip(limit * page).take(limit) {
                 response.push(&collection[key]);
             }
