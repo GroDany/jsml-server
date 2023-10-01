@@ -163,17 +163,30 @@ impl Database {
     }
 
     fn match_query(query: &QueryParams, value: &Value) -> bool {
-        let Some(value) = value.as_object() else {
-            return false;
-        };
-        query.filters.keys().all(|key| match value.get(key) {
-            Some(val) => {
-                let Some(val) = val.as_str() else {
-                    return false;
-                };
-                query.filters[key].contains(&val.to_string())
-            }
-            None => false,
-        })
+        query
+            .filters
+            .keys()
+            .all(|key| match Self::get_filtered_field(value, key) {
+                Some(val) => {
+                    let Some(val) = val.as_str() else {
+                        return false;
+                    };
+                    query.filters[key].contains(&val.to_string())
+                }
+                None => false,
+            })
+    }
+
+    fn get_filtered_field(value: &Value, key: &String) -> Option<Value> {
+        let keys = key.split('.');
+        let mut value = value;
+        for (_, key) in keys.enumerate() {
+            let tmp = value.get(key);
+            value = match tmp {
+                Some(val) => val,
+                None => return None,
+            };
+        }
+        Some(value.clone())
     }
 }

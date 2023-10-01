@@ -35,7 +35,10 @@
   "route2": [
     {
       "deep": {
-        "key2": "value2"
+        "key2": "value2",
+        "deep2": {
+            "key3": "deepvalue"
+        }
       },
       "id": "11f28fa7-56a9-46d2-b0db-b0d4e6567bb9",
       "key0": "value0",
