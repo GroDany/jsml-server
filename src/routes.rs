@@ -1,33 +1,58 @@
 use actix_web::{delete, get, http::StatusCode, patch, post, put, web, HttpResponse, Responder};
-use serde::Deserialize;
 use serde_json::Value;
-use std::sync::Mutex;
+use std::{collections::HashMap, sync::Mutex};
 
 use crate::{
     logger::{LogEntry, RouteEntry},
     state::State,
 };
 
-#[derive(Debug, Deserialize)]
-struct QueryParams {
-    #[serde(rename = "_limit")]
-    limit: Option<usize>,
+#[derive(Default, Debug)]
+pub struct QueryParams {
+    pub page: Option<usize>,
+    pub limit: Option<usize>,
+    pub filters: HashMap<String, Vec<String>>,
+}
 
-    #[serde(rename = "_page")]
-    page: Option<usize>,
+impl QueryParams {
+    fn new(query: HashMap<String, String>) -> Self {
+        let mut res = Self::default();
+        query.keys().for_each(|key| match key.as_str() {
+            "_page" => {
+                if let Ok(page) = query[key].parse::<usize>() {
+                    res.page = Some(page);
+                } else {
+                    res.page = None;
+                }
+            }
+            "_limit" => {
+                if let Ok(limit) = query[key].parse::<usize>() {
+                    res.limit = Some(limit);
+                } else {
+                    res.limit = None;
+                }
+            }
+            _ => {
+                let values: Vec<String> = query[key].split(',').map(String::from).collect();
+                res.filters.insert(key.clone(), values);
+            }
+        });
+        res
+    }
 }
 
 #[get("/{route}")]
 async fn get_all(
     path: web::Path<String>,
-    query: web::Query<QueryParams>,
+    query: web::Query<HashMap<String, String>>,
     data: web::Data<Mutex<State>>,
 ) -> impl Responder {
     let route = path.into_inner();
     let Ok(mut data) = data.lock() else {
         return HttpResponse::InternalServerError().body("Internal Server Error");
     };
-    let result = data.query(&route, query.page, query.limit);
+    let query = QueryParams::new(query.into_inner());
+    let result = data.query(&route, &query);
     let mut log = RouteEntry::new(&format!("localhost:{}/{route}", data.port));
     match result {
         Ok(response) => {

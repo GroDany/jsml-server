@@ -3,7 +3,7 @@ use serde_json::{json, Value};
 use std::collections::HashMap;
 use uuid::Uuid;
 
-use crate::jsml_error::JsmlError;
+use crate::{jsml_error::JsmlError, routes::QueryParams};
 
 #[derive(Debug)]
 pub struct Database {
@@ -39,27 +39,26 @@ impl Database {
         })
     }
 
-    pub fn query(
-        &self,
-        route: &str,
-        page: Option<usize>,
-        limit: Option<usize>,
-    ) -> Result<Value, JsmlError> {
+    pub fn query(&self, route: &str, query: &QueryParams) -> Result<Value, JsmlError> {
         let Some(collection) = self.database.get(route) else {
             return Err(JsmlError::new(&format!("collection {route} not found")));
         };
         let mut response: Vec<&Value> = vec![];
-        if let Some(page) = page {
-            let limit = match limit {
+        if let Some(page) = query.page {
+            let limit = match query.limit {
                 Some(limit) => limit,
                 None => 10,
             };
             for key in collection.keys().sorted().skip(limit * page).take(limit) {
-                response.push(&collection[key]);
+                if Self::match_query(&query, &collection[key]) {
+                    response.push(&collection[key]);
+                }
             }
         } else {
             for key in collection.keys().sorted() {
-                response.push(&collection[key]);
+                if Self::match_query(&query, &collection[key]) {
+                    response.push(&collection[key]);
+                }
             }
         }
         Ok(json!(response))
@@ -161,5 +160,20 @@ impl Database {
             response[key] = json!(result);
         }
         response
+    }
+
+    fn match_query(query: &QueryParams, value: &Value) -> bool {
+        let Some(value) = value.as_object() else {
+            return false;
+        };
+        query.filters.keys().all(|key| match value.get(key) {
+            Some(val) => {
+                dbg!(&query.filters[key]);
+                dbg!(val);
+                dbg!(query.filters[key].contains(&val.to_string()));
+                query.filters[key].contains(&val.to_string())
+            }
+            None => false,
+        })
     }
 }

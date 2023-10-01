@@ -5,6 +5,7 @@ use serde_json::Value;
 use crate::database::Database;
 use crate::jsml_error::JsmlError;
 use crate::logger::LogEntry;
+use crate::routes::QueryParams;
 use crate::source::Source;
 use crate::Args;
 
@@ -27,13 +28,8 @@ impl State {
         })
     }
 
-    pub fn query(
-        &self,
-        route: &str,
-        page: Option<usize>,
-        limit: Option<usize>,
-    ) -> Result<Value, JsmlError> {
-        self.database.query(route, page, limit)
+    pub fn query(&self, route: &str, query: &QueryParams) -> Result<Value, JsmlError> {
+        self.database.query(route, query)
     }
 
     pub fn get(&self, route: &str, id: &str) -> Result<Value, JsmlError> {

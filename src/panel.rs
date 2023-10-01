@@ -4,7 +4,7 @@ use actix_web::{get, web, HttpResponse, Responder};
 use html_to_string_macro::html;
 use serde_json::Value;
 
-use crate::state::State;
+use crate::{routes::QueryParams, state::State};
 
 fn display_routes(r: Vec<&str>) -> String {
     let mut result = String::new();
@@ -47,7 +47,7 @@ fn display_items(r: &Value) -> String {
 #[get("/jsml_{route}")]
 pub async fn routes(path: web::Path<String>, data: web::Data<Mutex<State>>) -> impl Responder {
     let route = path.into_inner();
-    let Ok(items) = data.lock().expect("Internal Error").query(&route, None, None) else {
+    let Ok(items) = data.lock().expect("Internal Error").query(&route, &QueryParams::default()) else {
        return HttpResponse::Ok()
             .content_type("text/html; charset=utf-8")
             .body(format!("Error {route} not found"));
