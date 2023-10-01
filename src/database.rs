@@ -168,9 +168,9 @@ impl Database {
         };
         query.filters.keys().all(|key| match value.get(key) {
             Some(val) => {
-                dbg!(&query.filters[key]);
-                dbg!(val);
-                dbg!(query.filters[key].contains(&val.to_string()));
+                let Some(val) = val.as_str() else {
+                    return false;
+                };
                 query.filters[key].contains(&val.to_string())
             }
             None => false,
