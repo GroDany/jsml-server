@@ -150,6 +150,7 @@ impl Database {
         }
     }
 
+    // TODO: Optimize (major bottleneck)
     pub fn serialize_all(&self) -> Value {
         let mut response = json!({});
         for key in self.database.keys() {

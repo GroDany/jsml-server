@@ -1,8 +1,7 @@
 use serde_json::Value;
-use std::{
-    fs::File,
-    io::{BufWriter, Read, Write},
-};
+use std::{fs::File, io::Read};
+use tokio::fs::OpenOptions;
+use tokio::io::AsyncWriteExt;
 
 use crate::database::Database;
 
@@ -27,10 +26,19 @@ impl Source {
     }
 
     pub fn write_all(&self, db: &Database) -> std::io::Result<()> {
-        let file = File::create(&self.path)?;
-        let mut writer = BufWriter::new(&file);
-        serde_json::to_writer_pretty(&mut writer, &db.serialize_all())?;
-        writer.flush()?;
+        let path = self.path.clone();
+        let serialized = db.serialize_all();
+        tokio::spawn(async move {
+            let Ok(res) = serde_json::to_string_pretty(&serialized) else {
+                return Err(std::io::Error::new(std::io::ErrorKind::InvalidData, "Invalid data  in database"));
+            };
+            let mut file = OpenOptions::new()
+                .write(true)
+                .truncate(true)
+                .open(&path)
+                .await?;
+            file.write_all(res.as_bytes()).await
+        });
         Ok(())
     }
 }
