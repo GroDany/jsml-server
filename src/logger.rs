@@ -29,16 +29,13 @@ impl RouteEntry {
 
 impl Display for RouteEntry {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        let mut result = " ".to_string();
+        let mut result = "".to_string();
         if let Some(code) = self.code {
             result = format!("{result}{code}");
         }
-
-        result = format!(
-            "{result} - {} - {} µs",
-            &self.path,
-            self.elapsed.as_micros()
-        );
+        let num = self.elapsed.as_micros();
+        let (n, r) = (num / 1000, num % 1000);
+        result = format!("{result}\t- {}\t-\t{}.{:03} ms", &self.path, n, r);
         write!(f, "{result}")
     }
 }

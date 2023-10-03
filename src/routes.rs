@@ -53,7 +53,7 @@ async fn get_all(
     };
     let query = QueryParams::new(query.into_inner());
     let result = data.query(&route, &query);
-    let mut log = RouteEntry::new(&format!("localhost:{}/{route}", data.port));
+    let mut log = RouteEntry::new(&format!("GET - localhost:{}/{route}", data.port));
     match result {
         Ok(response) => {
             log.update(StatusCode::OK);
@@ -77,7 +77,7 @@ async fn get_one(
     let Ok(mut data) = data.lock() else {
         return HttpResponse::InternalServerError().body("Internal Server Error");
     };
-    let mut log = RouteEntry::new(&format!("localhost:{}/{route}/{id}", data.port));
+    let mut log = RouteEntry::new(&format!("GET - localhost:{}/{route}/{id}", data.port));
     let result = data.get(&route, &id);
     match result {
         Ok(response) => {
@@ -129,7 +129,7 @@ async fn patch_one(
     let Ok(mut data) = data.lock() else {
         return HttpResponse::InternalServerError().body("Internal Server Error");
     };
-    let mut log = RouteEntry::new(&format!("localhost:{}/{route}/{id}", data.port));
+    let mut log = RouteEntry::new(&format!("PATCH - localhost:{}/{route}/{id}", data.port));
     let result = data.patch(&route, &id, &body, false);
     match result {
         Ok(response) => {
@@ -155,7 +155,7 @@ async fn post_one(
     let Ok(mut data) = data.lock() else {
         return HttpResponse::InternalServerError().body("Internal Server Error");
     };
-    let mut log = RouteEntry::new(&format!("localhost:{}/{route}", data.port));
+    let mut log = RouteEntry::new(&format!("POST - localhost:{}/{route}", data.port));
     let result = data.post(&route, &body, true);
     match result {
         Ok(response) => {
@@ -180,7 +180,7 @@ async fn delete(
     let Ok(mut data) = data.lock() else {
         return HttpResponse::InternalServerError().body("Internal Server Error");
     };
-    let mut log = RouteEntry::new(&format!("localhost:{}/{route}/{id}", data.port));
+    let mut log = RouteEntry::new(&format!("DELETE - localhost:{}/{route}/{id}", data.port));
     let result = data.delete(&route, &id, false);
     match result {
         Ok(response) => {

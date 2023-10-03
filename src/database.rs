@@ -150,15 +150,13 @@ impl Database {
         }
     }
 
-    // TODO: Optimize (major bottleneck)
-    pub fn serialize_all(&self) -> Value {
-        let mut response = json!({});
-        for key in self.database.keys() {
-            let mut result: Vec<&Value> = vec![];
-            for subkey in self.database[key].keys().sorted() {
-                result.push(&self.database[key][subkey]);
-            }
-            response[key] = json!(result);
+    pub fn serialize_all(&self) -> HashMap<String, Vec<Value>> {
+        let mut response = HashMap::<String, Vec<Value>>::new();
+        for collection in self.database.iter() {
+            response.insert(
+                collection.0.to_string(),
+                Vec::from_iter(collection.1.values().map(|x| x.clone())),
+            );
         }
         response
     }
@@ -168,12 +166,11 @@ impl Database {
             .filters
             .keys()
             .all(|key| match Self::get_filtered_field(value, key) {
-                Some(val) => {
-                    let Some(val) = val.as_str() else {
-                        return false;
-                    };
-                    query.filters[key].contains(&val.to_string())
-                }
+                Some(val) => match val {
+                    Value::String(val) => query.filters[key].contains(&val.to_string()),
+                    Value::Number(val) => query.filters[key].contains(&val.to_string()),
+                    _ => false,
+                },
                 None => false,
             })
     }
