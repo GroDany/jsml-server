@@ -169,6 +169,7 @@ impl Database {
                 Some(val) => match val {
                     Value::String(val) => query.filters[key].contains(&val.to_string()),
                     Value::Number(val) => query.filters[key].contains(&val.to_string()),
+                    Value::Bool(val) => query.filters[key].contains(&val.to_string()),
                     _ => false,
                 },
                 None => false,
