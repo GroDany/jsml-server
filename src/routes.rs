@@ -48,7 +48,7 @@ async fn get_all(
     data: web::Data<Mutex<State>>,
 ) -> impl Responder {
     let route = path.into_inner();
-    let Ok(mut data) = data.lock() else {
+    let Ok(data) = data.lock() else {
         return HttpResponse::InternalServerError().body("Internal Server Error");
     };
     let query = QueryParams::new(query.into_inner());
@@ -57,12 +57,12 @@ async fn get_all(
     match result {
         Ok(response) => {
             log.update(StatusCode::OK);
-            data.log(log);
+            // data.log(log);
             HttpResponse::Ok().json(response)
         }
         Err(e) => {
             log.update(StatusCode::NOT_FOUND);
-            data.log(log);
+            // data.log(log);
             HttpResponse::NotFound().body(format!("Error: {e}"))
         }
     }
@@ -74,7 +74,7 @@ async fn get_one(
     data: web::Data<Mutex<State>>,
 ) -> impl Responder {
     let (route, id) = path.into_inner();
-    let Ok(mut data) = data.lock() else {
+    let Ok(data) = data.lock() else {
         return HttpResponse::InternalServerError().body("Internal Server Error");
     };
     let mut log = RouteEntry::new(&format!("GET - localhost:{}/{route}/{id}", data.port));
@@ -82,12 +82,12 @@ async fn get_one(
     match result {
         Ok(response) => {
             log.update(StatusCode::OK);
-            data.log(log);
+            // data.log(log);
             HttpResponse::Ok().json(response)
         }
         Err(e) => {
             log.update(StatusCode::NOT_FOUND);
-            data.log(log);
+            // data.log(log);
             HttpResponse::NotFound().body(format!("Error: {e}"))
         }
     }

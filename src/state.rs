@@ -28,11 +28,15 @@ impl State {
         })
     }
 
-    pub fn query(&self, route: &str, query: &QueryParams) -> Result<Value, JsmlError> {
+    pub fn query<'a>(
+        &'a self,
+        route: &str,
+        query: &QueryParams,
+    ) -> Result<Vec<&'a Value>, JsmlError> {
         self.database.query(route, query)
     }
 
-    pub fn get(&self, route: &str, id: &str) -> Result<Value, JsmlError> {
+    pub fn get(&self, route: &str, id: &str) -> Result<&Value, JsmlError> {
         self.database.get(route, id)
     }
 
@@ -41,7 +45,7 @@ impl State {
         match result {
             Ok(_) => {
                 if flush {
-                    self.source.write_all(&self.database)?;
+                    self.source.write_all(self.database.serialize_all())?;
                 }
                 Ok(())
             }
@@ -60,7 +64,7 @@ impl State {
         match result {
             Ok(res) => {
                 if flush {
-                    self.source.write_all(&self.database)?;
+                    self.source.write_all(self.database.serialize_all())?;
                 }
                 Ok(res)
             }
@@ -79,7 +83,7 @@ impl State {
         match result {
             Ok(res) => {
                 if flush {
-                    self.source.write_all(&self.database)?;
+                    self.source.write_all(self.database.serialize_all())?;
                 }
                 Ok(res)
             }
@@ -92,7 +96,7 @@ impl State {
         match result {
             Ok(res) => {
                 if flush {
-                    self.source.write_all(&self.database)?;
+                    self.source.write_all(self.database.serialize_all())?;
                 }
                 Ok(res)
             }

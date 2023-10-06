@@ -39,7 +39,11 @@ impl Database {
         })
     }
 
-    pub fn query(&self, route: &str, query: &QueryParams) -> Result<Value, JsmlError> {
+    pub fn query<'a>(
+        &'a self,
+        route: &str,
+        query: &QueryParams,
+    ) -> Result<Vec<&'a Value>, JsmlError> {
         let Some(collection) = self.database.get(route) else {
             return Err(JsmlError::new(&format!("collection {route} not found")));
         };
@@ -61,17 +65,17 @@ impl Database {
                 }
             }
         }
-        Ok(json!(response))
+        Ok(response)
     }
 
-    pub fn get(&self, route: &str, id: &str) -> Result<Value, JsmlError> {
+    pub fn get(&self, route: &str, id: &str) -> Result<&Value, JsmlError> {
         let Some(collection) = self.database.get(route) else {
             return Err(JsmlError::new(&format!("collection {route} not found")));
         };
         let Some(response) = collection.get(id) else {
             return Err(JsmlError::new(&format!("item {route}/{id} not found")));
         };
-        Ok(json!(response))
+        Ok(response)
     }
 
     pub fn delete(&mut self, route: &str, id: &str) -> Result<(), JsmlError> {

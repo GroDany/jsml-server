@@ -1,9 +1,8 @@
 use serde_json::Value;
+use std::collections::HashMap;
 use std::{fs::File, io::Read};
 use tokio::fs::OpenOptions;
 use tokio::io::AsyncWriteExt;
-
-use crate::database::Database;
 
 #[derive(Debug)]
 pub struct Source {
@@ -25,9 +24,8 @@ impl Source {
         Ok(source)
     }
 
-    pub fn write_all(&self, db: &Database) -> std::io::Result<()> {
+    pub fn write_all(&self, serialized: HashMap<String, Vec<Value>>) -> std::io::Result<()> {
         let path = self.path.clone();
-        let serialized = db.serialize_all();
         tokio::spawn(async move {
             let Ok(res) = serde_json::to_string_pretty(&serialized) else {
                 return Err(std::io::Error::new(std::io::ErrorKind::InvalidData, "Invalid data  in database"));
@@ -35,7 +33,7 @@ impl Source {
             let mut file = OpenOptions::new()
                 .write(true)
                 .truncate(true)
-                .open(&path)
+                .open(path)
                 .await?;
             file.write_all(res.as_bytes()).await
         });
