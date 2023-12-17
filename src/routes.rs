@@ -57,12 +57,16 @@ async fn get_all(
     match result {
         Ok(response) => {
             log.update(StatusCode::OK);
-            // data.log(log);
-            HttpResponse::Ok().json(response)
+            // // data.log(Arc::new(log));
+            if let Ok(response) = serde_json::to_string_pretty(&response) {
+                HttpResponse::Ok().body(response)
+            } else {
+                HttpResponse::InternalServerError().body("Internal Server Error")
+            }
         }
         Err(e) => {
             log.update(StatusCode::NOT_FOUND);
-            // data.log(log);
+            // // data.log(log);
             HttpResponse::NotFound().body(format!("Error: {e}"))
         }
     }
@@ -78,16 +82,21 @@ async fn get_one(
         return HttpResponse::InternalServerError().body("Internal Server Error");
     };
     let mut log = RouteEntry::new(&format!("GET - localhost:{}/{route}/{id}", data.port));
-    let result = data.get(&route, &id);
+    let result = data.get(&route, &id).cloned();
     match result {
         Ok(response) => {
-            log.update(StatusCode::OK);
-            // data.log(log);
-            HttpResponse::Ok().json(response)
+            // // data.log(Arc::new(log));
+            if let Ok(response) = serde_json::to_string_pretty(&response) {
+                log.update(StatusCode::OK);
+                HttpResponse::Ok().body(response)
+            } else {
+                log.update(StatusCode::INTERNAL_SERVER_ERROR);
+                HttpResponse::InternalServerError().body("Internal Server Error")
+            }
         }
         Err(e) => {
+            // // data.log(Arc::new(log));
             log.update(StatusCode::NOT_FOUND);
-            // data.log(log);
             HttpResponse::NotFound().body(format!("Error: {e}"))
         }
     }
@@ -109,12 +118,12 @@ async fn put_one(
     match result {
         Ok(response) => {
             log.update(StatusCode::OK);
-            data.log(log);
+            // // data.log(&log);
             HttpResponse::Ok().json(response)
         }
         Err(e) => {
             log.update(StatusCode::NOT_FOUND);
-            data.log(log);
+            // // data.log(&log);
             HttpResponse::NotFound().body(format!("Error: {e}"))
         }
     }
@@ -135,12 +144,12 @@ async fn patch_one(
     match result {
         Ok(response) => {
             log.update(StatusCode::OK);
-            data.log(log);
+            // data.log(&log);
             HttpResponse::Ok().json(response)
         }
         Err(e) => {
             log.update(StatusCode::NOT_FOUND);
-            data.log(log);
+            // data.log(&log);
             HttpResponse::NotFound().body(format!("Error: {e}"))
         }
     }
@@ -161,12 +170,12 @@ async fn post_one(
     match result {
         Ok(response) => {
             log.update(StatusCode::OK);
-            data.log(log);
+            // data.log(&log);
             HttpResponse::Ok().json(response)
         }
         Err(e) => {
             log.update(StatusCode::NOT_FOUND);
-            data.log(log);
+            // data.log(&log);
             HttpResponse::NotFound().body(format!("Error: {e}"))
         }
     }
@@ -186,12 +195,12 @@ async fn delete(
     match result {
         Ok(response) => {
             log.update(StatusCode::OK);
-            data.log(log);
+            // data.log(&log);
             HttpResponse::Ok().json(response)
         }
         Err(e) => {
             log.update(StatusCode::NOT_FOUND);
-            data.log(log);
+            // data.log(&log);
             HttpResponse::NotFound().body(format!("Error: {e}"))
         }
     }

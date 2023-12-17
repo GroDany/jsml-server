@@ -12,7 +12,7 @@ use crate::Args;
 pub struct State {
     pub port: usize,
     pub database: Database,
-    entries: Vec<Arc<dyn LogEntry>>,
+    // entries: Vec<Arc<dyn LogEntry>>,
     source: Source,
 }
 
@@ -24,7 +24,7 @@ impl State {
             port: args.port,
             database,
             source,
-            entries: vec![],
+            // entries: vec![],
         })
     }
 
@@ -104,7 +104,7 @@ impl State {
         }
     }
 
-    pub fn log(&mut self, entry: impl LogEntry + 'static) {
-        self.entries.push(Arc::new(entry));
-    }
+    // pub fn log(&mut self, entry: Arc<dyn LogEntry>) {
+    //     self.entries.push(entry);
+    // }
 }
